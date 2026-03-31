@@ -6,6 +6,7 @@ const {
   deleteSmsTemplate,
   createCalendarEvent,
   getCalendarEvents,
+  updateCalendarEvent,
   deleteCalendarEvent,
   sendSms,
   getSmsHistory
@@ -21,6 +22,9 @@ router.route('/sms/templates/:id').put(authorize('ADMIN', 'PRINCIPAL'), updateSm
 router.post('/sms/send', authorize('ADMIN', 'PRINCIPAL', 'TEACHER', 'ACCOUNTANT'), sendSms);
 router.get('/sms/history', getSmsHistory);
 router.route('/calendar').get(getCalendarEvents).post(authorize('ADMIN', 'PRINCIPAL'), createCalendarEvent);
-router.delete('/calendar/:id', authorize('ADMIN', 'PRINCIPAL'), deleteCalendarEvent);
+router
+  .route('/calendar/:id')
+  .put(authorize('ADMIN', 'PRINCIPAL'), updateCalendarEvent)
+  .delete(authorize('ADMIN', 'PRINCIPAL'), deleteCalendarEvent);
 
 module.exports = router;

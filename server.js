@@ -20,6 +20,10 @@ const examRoutes = require('./routes/exam.routes');
 const communicationRoutes = require('./routes/communication.routes');
 const settingsRoutes = require('./routes/settings.routes');
 const auditRoutes = require('./routes/audit.routes');
+const tcRoutes = require('./routes/tc.routes');
+const incomeRoutes = require('./routes/income.routes');
+const financeExtraRoutes = require('./routes/financeExtra.routes');
+const { startCronJobs } = require('./services/cron.service');
 
 // Connect to Database
 if (process.env.NODE_ENV !== 'test') {
@@ -48,6 +52,9 @@ app.use('/api/v1/exams', examRoutes);
 app.use('/api/v1/communication', communicationRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/audit-logs', auditRoutes);
+app.use('/api/v1/tc', tcRoutes);
+app.use('/api/v1/finance/income', incomeRoutes);
+app.use('/api/v1/finance', financeExtraRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -74,6 +81,7 @@ if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
   });
+  startCronJobs();
 }
 
 module.exports = app;

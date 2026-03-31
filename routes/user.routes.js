@@ -6,7 +6,8 @@ const {
   updateUser,
   deleteUser,
   getRoles,
-  updatePermissions
+  updatePermissions,
+  resetUserPassword
 } = require('../controllers/user.controller');
 const { protect } = require('../middleware/auth.middleware');
 const { authorize } = require('../middleware/rbac.middleware');
@@ -16,6 +17,7 @@ router.use(protect);
 
 router.get('/roles', authorize('ADMIN', 'PRINCIPAL'), getRoles);
 router.put('/permissions', authorize('ADMIN', 'PRINCIPAL'), updatePermissions);
+router.post('/reset-password', authorize('PRINCIPAL'), resetUserPassword);
 router.route('/').get(authorize('ADMIN', 'PRINCIPAL'), getUsers).post(authorize('ADMIN', 'PRINCIPAL'), createUser);
 router
   .route('/:id')

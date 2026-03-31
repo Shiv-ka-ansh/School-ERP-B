@@ -11,7 +11,14 @@ exports.getSchoolSettings = async (req, res, next) => {
     const schoolProfile = await getOrDefault(req.schoolId, 'schoolProfile', {});
     const academicYear = await getOrDefault(req.schoolId, 'academicYear', '');
     const printFormats = await getOrDefault(req.schoolId, 'printFormats', {});
-    return sendSuccess(res, { data: { schoolProfile, academicYear, printFormats } });
+    const gradingScale = await getOrDefault(req.schoolId, 'gradingScale', []);
+    const alertRules = await getOrDefault(req.schoolId, 'alertRules', {
+      consecutiveAbsenceThreshold: 3,
+      feeReminderDays: 7,
+      lowAttendancePercent: 75,
+      tcBlockWithDue: true
+    });
+    return sendSuccess(res, { data: { schoolProfile, academicYear, printFormats, gradingScale, alertRules } });
   } catch (error) {
     return next(error);
   }

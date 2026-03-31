@@ -1,0 +1,20 @@
+const mongoose = require('mongoose');
+
+const tcRecordSchema = new mongoose.Schema(
+  {
+    schoolId: { type: String, required: true, default: 'smps_jhansi', index: true },
+    tcNumber: { type: String, required: true, unique: true },
+    studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
+    issuedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    issuedAt: { type: Date, default: Date.now },
+    feesClearedAt: Date,
+    characterCertText: String,
+    status: { type: String, enum: ['ISSUED', 'CANCELLED'], default: 'ISSUED' },
+    remarks: String
+  },
+  { timestamps: true }
+);
+
+tcRecordSchema.index({ schoolId: 1, studentId: 1, issuedAt: -1 });
+
+module.exports = mongoose.model('TCRecord', tcRecordSchema);

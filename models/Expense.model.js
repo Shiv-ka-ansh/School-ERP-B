@@ -10,7 +10,11 @@ const expenseSchema = new mongoose.Schema(
     paymentMode: { type: String, enum: ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER'], default: 'CASH' },
     vendor: String,
     billNo: String,
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    status: { type: String, enum: ['PAID', 'PENDING'], default: 'PAID' },
+    dueDate: Date,
+    billPhotoUrl: String,
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   },
   { timestamps: true }
 );

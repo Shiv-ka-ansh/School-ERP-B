@@ -14,6 +14,8 @@ exports.logAction = async (auditData) => {
       entityId: auditData.targetId,
       ipAddress: auditData.ipAddress,
       userAgent: auditData.userAgent,
+      endpoint: auditData.endpoint,
+      httpMethod: auditData.httpMethod,
       riskLevel: auditData.riskLevel || 'LOW',
       
       // Compute changes if old and new values are provided

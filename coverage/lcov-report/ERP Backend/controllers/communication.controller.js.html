@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">64% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>16/25</span>
+                <span class='fraction'>18/27</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">64% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>16/25</span>
+                <span class='fraction'>18/27</span>
             </div>
         
             
@@ -107,20 +107,23 @@
 <a name='L42'></a><a href='#L42'>42</a>
 <a name='L43'></a><a href='#L43'>43</a>
 <a name='L44'></a><a href='#L44'>44</a>
-<a name='L45'></a><a href='#L45'>45</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -129,7 +132,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -156,6 +158,7 @@ const SMSLog = require('../models/SMSLog.model');
 const CalendarEvent = require('../models/CalendarEvent.model');
 const { createCrudController } = require('./crud.controller');
 const { sendSuccess } = require('../utils/apiResponse');
+const { dispatchSms } = require('../services/sms.service');
 &nbsp;
 const templateCrud = createCrudController({ Model: SMSTemplate, moduleName: 'SMS', searchable: ['title', 'content'] });
 const calendarCrud = createCrudController({ Model: CalendarEvent, moduleName: 'CALENDAR', searchable: ['title', 'category'] });
@@ -167,21 +170,21 @@ exports.deleteSmsTemplate = templateCrud.remove;
 &nbsp;
 exports.createCalendarEvent = calendarCrud.create;
 exports.getCalendarEvents = calendarCrud.list;
+exports.updateCalendarEvent = calendarCrud.update;
 exports.deleteCalendarEvent = calendarCrud.remove;
 &nbsp;
 exports.sendSms = <span class="fstat-no" title="function not covered" >as</span>ync (req, res, next) =&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
-    const { recipient, recipientType, message, templateId } = <span class="cstat-no" title="statement not covered" >req.body;</span>
-    const log = <span class="cstat-no" title="statement not covered" >await SMSLog.create({</span>
+    const { recipient, message, templateId, variables = <span class="branch-0 cbranch-no" title="branch not covered" >{} </span>} = <span class="cstat-no" title="statement not covered" >req.body;</span>
+    const log = <span class="cstat-no" title="statement not covered" >await dispatchSms({</span>
       schoolId: req.schoolId,
       recipient,
-      recipientType,
       message,
       templateId,
-      status: 'SENT',
+      variables,
       createdBy: req.user._id
     });
-<span class="cstat-no" title="statement not covered" >    return sendSuccess(res, { statusCode: 201, message: 'SMS logged as sent', data: log });</span>
+<span class="cstat-no" title="statement not covered" >    return sendSuccess(res, { statusCode: 201, message: 'SMS dispatch attempted', data: log });</span>
   } catch (error) {
 <span class="cstat-no" title="statement not covered" >    return next(error);</span>
   }
@@ -202,7 +205,7 @@ exports.getSmsHistory = <span class="fstat-no" title="function not covered" >as<
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-31T16:38:49.256Z
+                at 2026-03-31T18:21:42.676Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

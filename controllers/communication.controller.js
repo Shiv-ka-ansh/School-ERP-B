@@ -3,6 +3,7 @@ const SMSLog = require('../models/SMSLog.model');
 const CalendarEvent = require('../models/CalendarEvent.model');
 const { createCrudController } = require('./crud.controller');
 const { sendSuccess } = require('../utils/apiResponse');
+const { dispatchSms } = require('../services/sms.service');
 
 const templateCrud = createCrudController({ Model: SMSTemplate, moduleName: 'SMS', searchable: ['title', 'content'] });
 const calendarCrud = createCrudController({ Model: CalendarEvent, moduleName: 'CALENDAR', searchable: ['title', 'category'] });
@@ -14,21 +15,21 @@ exports.deleteSmsTemplate = templateCrud.remove;
 
 exports.createCalendarEvent = calendarCrud.create;
 exports.getCalendarEvents = calendarCrud.list;
+exports.updateCalendarEvent = calendarCrud.update;
 exports.deleteCalendarEvent = calendarCrud.remove;
 
 exports.sendSms = async (req, res, next) => {
   try {
-    const { recipient, recipientType, message, templateId } = req.body;
-    const log = await SMSLog.create({
+    const { recipient, message, templateId, variables = {} } = req.body;
+    const log = await dispatchSms({
       schoolId: req.schoolId,
       recipient,
-      recipientType,
       message,
       templateId,
-      status: 'SENT',
+      variables,
       createdBy: req.user._id
     });
-    return sendSuccess(res, { statusCode: 201, message: 'SMS logged as sent', data: log });
+    return sendSuccess(res, { statusCode: 201, message: 'SMS dispatch attempted', data: log });
   } catch (error) {
     return next(error);
   }

@@ -6,7 +6,24 @@ const calendarEventSchema = new mongoose.Schema(
     title: { type: String, required: true },
     description: String,
     eventDate: { type: Date, required: true },
-    category: { type: String, enum: ['EVENT', 'HOLIDAY', 'EXAM', 'MEETING'], default: 'EVENT' },
+    endDate: Date,
+    category: {
+      type: String,
+      enum: [
+        'Examination',
+        'Holiday',
+        'PTM',
+        'Sports Event',
+        'Annual Day',
+        'Cultural Program',
+        'Competition',
+        'Inspection',
+        'Other'
+      ],
+      default: 'Other'
+    },
+    isRecurring: { type: Boolean, default: false },
+    recurrenceRule: String,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   },
   { timestamps: true }

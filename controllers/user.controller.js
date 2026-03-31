@@ -40,3 +40,19 @@ exports.updatePermissions = async (req, res, next) => {
     return next(error);
   }
 };
+
+exports.resetUserPassword = async (req, res, next) => {
+  try {
+    const { userId, newPassword } = req.body;
+    if (!userId || !newPassword) {
+      return next(new AppError('userId and newPassword are required', 400, 'VALIDATION_ERROR'));
+    }
+    const user = await User.findOne({ _id: userId, schoolId: req.schoolId }).select('+password');
+    if (!user) return next(new AppError('User not found', 404, 'NOT_FOUND'));
+    user.password = newPassword;
+    await user.save();
+    return sendSuccess(res, { message: 'Password reset successfully' });
+  } catch (error) {
+    return next(error);
+  }
+};

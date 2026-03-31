@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
 const AppError = require('../utils/appError');
 const logger = require('../utils/logger');
+const auditService = require('../services/audit.service');
 
 const generateToken = (userId, role, schoolId = 'smps_jhansi') => {
   return jwt.sign(
@@ -23,6 +24,21 @@ exports.login = async (req, res, next) => {
     const user = await User.findOne({ username }).select('+password');
 
     if (!user || !(await user.comparePassword(password))) {
+      await auditService.logAction({
+        userId: user?._id || null,
+        username: username || 'unknown',
+        userRole: user?.role || 'UNKNOWN',
+        module: 'USERS',
+        action: 'LOGIN',
+        actionDescription: 'Failed login attempt',
+        targetCollection: 'User',
+        targetId: user?._id,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+        endpoint: req.originalUrl,
+        httpMethod: req.method,
+        riskLevel: 'HIGH'
+      });
       return next(new AppError('Invalid username or password', 401, 'AUTH_INVALID'));
     }
 
@@ -35,6 +51,20 @@ exports.login = async (req, res, next) => {
     // Update last login
     user.lastLogin = Date.now();
     await user.save({ validateBeforeSave: false });
+    await auditService.logAction({
+      userId: user._id,
+      username: user.username,
+      userRole: user.role,
+      module: 'USERS',
+      action: 'LOGIN',
+      actionDescription: 'Login successful',
+      targetCollection: 'User',
+      targetId: user._id,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+      endpoint: req.originalUrl,
+      httpMethod: req.method
+    });
 
     res.status(200).json({
       success: true,
@@ -82,6 +112,20 @@ exports.me = async (req, res, next) => {
 
 exports.logout = async (req, res, next) => {
   try {
+    await auditService.logAction({
+      userId: req.user._id,
+      username: req.user.username,
+      userRole: req.user.role,
+      module: 'USERS',
+      action: 'LOGOUT',
+      actionDescription: 'Logout successful',
+      targetCollection: 'User',
+      targetId: req.user._id,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+      endpoint: req.originalUrl,
+      httpMethod: req.method
+    });
     // Stateless JWTs mean logout is primarily client-side (discarding token)
     res.status(200).json({
       success: true,
