@@ -28,3 +28,5 @@ coverage/
 
 # Environment Variables
 .env
+.env.local
+.env.example    

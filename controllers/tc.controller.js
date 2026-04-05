@@ -8,7 +8,7 @@ const auditService = require('../services/audit.service');
 
 exports.generateTC = async (req, res, next) => {
   try {
-    const { studentId, characterCertText = '' } = req.body;
+    const { studentId, characterCertText = '', dateOfLeaving, lastExamAppeared, result } = req.body;
     const student = await Student.findOne({ _id: studentId, schoolId: req.schoolId, isDeleted: false });
     if (!student) {
       return next(new AppError('Student not found', 404, 'NOT_FOUND'));
@@ -36,6 +36,9 @@ exports.generateTC = async (req, res, next) => {
       issuedAt: new Date(),
       feesClearedAt: student.totalFeesDue <= 0 ? new Date() : null,
       characterCertText,
+      dateOfLeaving: dateOfLeaving ? new Date(dateOfLeaving) : new Date(),
+      lastExamAppeared: lastExamAppeared || '',
+      result: result || 'Pass',
       status: 'ISSUED'
     });
 

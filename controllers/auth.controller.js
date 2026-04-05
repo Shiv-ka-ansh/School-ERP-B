@@ -21,25 +21,43 @@ exports.login = async (req, res, next) => {
     }
 
     // Include the password field in the query result
-    const user = await User.findOne({ username }).select('+password');
+    const user = await User.findOne({ $or: [{ username }, { email: username }] }).select('+password');
 
-    if (!user || !(await user.comparePassword(password))) {
+    if (!user) {
       await auditService.logAction({
-        userId: user?._id || null,
+        userId: null,
         username: username || 'unknown',
-        userRole: user?.role || 'UNKNOWN',
+        userRole: 'UNKNOWN',
         module: 'USERS',
         action: 'LOGIN',
-        actionDescription: 'Failed login attempt',
+        actionDescription: 'Username not found',
         targetCollection: 'User',
-        targetId: user?._id,
         ipAddress: req.ip,
         userAgent: req.get('user-agent'),
         endpoint: req.originalUrl,
         httpMethod: req.method,
         riskLevel: 'HIGH'
       });
-      return next(new AppError('Invalid username or password', 401, 'AUTH_INVALID'));
+      return next(new AppError('Account not found with this Username / Email', 404, 'AUTH_INVALID'));
+    }
+
+    if (!(await user.comparePassword(password))) {
+      await auditService.logAction({
+        userId: user._id,
+        username: user.username,
+        userRole: user.role,
+        module: 'USERS',
+        action: 'LOGIN',
+        actionDescription: 'Incorrect password',
+        targetCollection: 'User',
+        targetId: user._id,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+        endpoint: req.originalUrl,
+        httpMethod: req.method,
+        riskLevel: 'HIGH'
+      });
+      return next(new AppError('Incorrect password', 401, 'AUTH_INVALID'));
     }
 
     if (!user.isActive) {

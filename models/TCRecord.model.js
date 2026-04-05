@@ -9,6 +9,9 @@ const tcRecordSchema = new mongoose.Schema(
     issuedAt: { type: Date, default: Date.now },
     feesClearedAt: Date,
     characterCertText: String,
+    dateOfLeaving: Date,
+    lastExamAppeared: String,
+    result: { type: String, enum: ['Pass', 'Fail', 'Promoted', 'N/A'], default: 'Pass' },
     status: { type: String, enum: ['ISSUED', 'CANCELLED'], default: 'ISSUED' },
     remarks: String
   },
