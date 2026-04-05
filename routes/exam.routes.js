@@ -8,6 +8,7 @@ const {
   getSyllabus,
   updateSyllabus,
   deleteSyllabus,
+  getSyllabusProgress,
   bulkUpsertResults,
   getResultsByExam,
   getMeritList,
@@ -27,6 +28,7 @@ router.get('/results/:examId', getResultsByExam);
 router.get('/merit-list', getMeritList);
 router.get('/report-card/:studentId', getReportCard);
 
+router.get('/syllabus/progress', getSyllabusProgress);
 router.route('/syllabus').get(getSyllabus).post(authorize('ADMIN', 'PRINCIPAL', 'TEACHER'), createSyllabus);
 router
   .route('/syllabus/:id')

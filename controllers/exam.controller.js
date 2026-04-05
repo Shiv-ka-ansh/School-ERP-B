@@ -125,3 +125,30 @@ exports.getReportCard = async (req, res, next) => {
     return next(error);
   }
 };
+
+exports.getSyllabusProgress = async (req, res, next) => {
+  try {
+    const syllabi = await Syllabus.find({ schoolId: req.schoolId }).lean();
+    
+    // Group by className + subject
+    const grouped = {};
+    for (const item of syllabi) {
+      const key = `${item.className}_${item.subject}`;
+      if (!grouped[key]) {
+        grouped[key] = { className: item.className, subject: item.subject, total: 0, completed: 0, inProgress: 0 };
+      }
+      grouped[key].total += 1;
+      if (item.status === 'COMPLETED') grouped[key].completed += 1;
+      else if (item.status === 'IN_PROGRESS') grouped[key].inProgress += 1;
+    }
+    
+    const progress = Object.values(grouped).map(g => ({
+      ...g,
+      progress: g.total > 0 ? Math.round((g.completed / g.total) * 100) : 0
+    })).sort((a, b) => a.className.localeCompare(b.className) || a.subject.localeCompare(b.subject));
+    
+    return sendSuccess(res, { data: progress });
+  } catch (error) {
+    return next(error);
+  }
+};
