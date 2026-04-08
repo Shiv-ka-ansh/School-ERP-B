@@ -9,7 +9,7 @@ const { sendSuccess } = require('../utils/apiResponse');
 
 exports.bulkUpsertAttendance = async (req, res, next) => {
   try {
-    const { type, date, records = [] } = req.body;
+    const { type, date, className, records = [] } = req.body;
     const schoolId = req.schoolId;
     const normalizedDate = new Date(date);
 
@@ -34,6 +34,7 @@ exports.bulkUpsertAttendance = async (req, res, next) => {
               ...record,
               schoolId,
               type,
+              className,
               date: normalizedDate,
               updatedBy: req.user._id
             },

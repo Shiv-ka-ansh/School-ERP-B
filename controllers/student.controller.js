@@ -11,6 +11,20 @@ exports.createStudent = async (req, res, next) => {
   try {
     const studentData = req.body;
     
+    // Duplicate check: Same name, class, and mobile in the same school
+    const existingStudent = await Student.findOne({
+      schoolId: req.schoolId,
+      firstName: studentData.firstName,
+      lastName: studentData.lastName,
+      currentClass: studentData.currentClass,
+      primaryContactPhone: studentData.primaryContactPhone,
+      isDeleted: false
+    });
+
+    if (existingStudent) {
+      return next(new AppError('A student with this name, class, and contact number already exists.', 400, 'DUPLICATE_ERROR'));
+    }
+
     // Generate studentId using atomic counter to avoid race conditions
     const seq = await Counter.findOneAndUpdate(
       { key: `student-seq-${req.schoolId}` },
@@ -89,7 +103,7 @@ exports.getStudents = async (req, res, next) => {
     }
     
     const students = await Student.find(filter)
-      .select('studentId admissionNumber firstName lastName currentClass section rollNumber photoUrl primaryContactPhone totalFeesDue isActive')
+      .select('studentId admissionNumber firstName lastName fatherName dateOfBirth currentClass section rollNumber photoUrl primaryContactPhone totalFeesDue isActive')
       .sort({ rollNumber: 1 })
       .skip(skip)
       .limit(limit);

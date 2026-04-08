@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { encrypt, decrypt } = require('../utils/encryption');
 
 const studentSchema = new mongoose.Schema({
   studentId: { type: String, required: true, unique: true }, // Equivalent to admissionNumber internally
@@ -11,6 +12,19 @@ const studentSchema = new mongoose.Schema({
   bloodGroup: { type: String },
   currentClass: { type: String, required: true },
   section: { type: String, enum: ['A', 'B', 'C', 'D'], default: 'A' },
+  
+  // IDs & Government Data
+  aadharNumber: { 
+    type: String, 
+    set: encrypt, 
+    get: decrypt 
+  },
+  studentPEN: { type: String },
+  parentAadhar: { 
+    type: String, 
+    set: encrypt, 
+    get: decrypt 
+  },
   
   // Parent Details
   fatherName: String,

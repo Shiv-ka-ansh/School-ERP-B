@@ -8,7 +8,7 @@ const attendanceSchema = new mongoose.Schema(
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
     staffId: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' },
     className: String,
-    status: { type: String, enum: ['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY'], required: true },
+    status: { type: String, enum: ['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'LEAVE'], required: true },
     remarks: String,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
@@ -16,7 +16,13 @@ const attendanceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-attendanceSchema.index({ schoolId: 1, type: 1, date: 1, studentId: 1 }, { unique: true, sparse: true });
-attendanceSchema.index({ schoolId: 1, type: 1, date: 1, staffId: 1 }, { unique: true, sparse: true });
+attendanceSchema.index(
+  { schoolId: 1, type: 1, date: 1, studentId: 1 }, 
+  { unique: true, partialFilterExpression: { type: 'STUDENT' } }
+);
+attendanceSchema.index(
+  { schoolId: 1, type: 1, date: 1, staffId: 1 }, 
+  { unique: true, partialFilterExpression: { type: 'STAFF' } }
+);
 
 module.exports = mongoose.model('Attendance', attendanceSchema);

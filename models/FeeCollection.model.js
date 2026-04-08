@@ -13,6 +13,12 @@ const feeCollectionSchema = new mongoose.Schema(
     mode: { type: String, enum: ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER'], default: 'CASH' },
     status: { type: String, enum: ['PAID', 'PENDING', 'FAILED'], default: 'PAID' },
     receiptNo: { type: String, required: true, unique: true },
+    period: String,
+    feeHeads: [{
+      head: String,
+      amount: Number
+    }],
+    refDetails: String,
     remarks: String,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   },

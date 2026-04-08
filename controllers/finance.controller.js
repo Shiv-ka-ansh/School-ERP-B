@@ -29,7 +29,7 @@ exports.deleteExpense = expenseCrud.remove;
 
 exports.collectFee = async (req, res, next) => {
   try {
-    const { studentId, amount, mode, remarks, installmentNo = 1 } = req.body;
+    const { studentId, amount, mode, remarks, installmentNo = 1, period, feeHeads, refDetails } = req.body;
     const student = await Student.findOne({ _id: studentId, schoolId: req.schoolId, isDeleted: false });
     if (!student) {
       return next(new AppError('Student not found', 404, 'NOT_FOUND'));
@@ -65,6 +65,9 @@ exports.collectFee = async (req, res, next) => {
       amount: netAmount,
       mode,
       remarks,
+      period,
+      feeHeads,
+      refDetails,
       installmentNo,
       grossAmount: amount,
       discountAmount,
