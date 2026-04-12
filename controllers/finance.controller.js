@@ -29,7 +29,8 @@ exports.deleteExpense = expenseCrud.remove;
 
 exports.collectFee = async (req, res, next) => {
   try {
-    const { studentId, amount, mode, remarks, installmentNo = 1, period, feeHeads, refDetails } = req.body;
+    const { studentId, amount, mode, remarks, installmentNo = 1, period, feeHeads, refDetails, date: customDate } = req.body;
+    const feeDate = customDate ? new Date(customDate) : new Date();
     const student = await Student.findOne({ _id: studentId, schoolId: req.schoolId, isDeleted: false });
     if (!student) {
       return next(new AppError('Student not found', 404, 'NOT_FOUND'));
@@ -40,7 +41,7 @@ exports.collectFee = async (req, res, next) => {
       { $inc: { value: 1 } },
       { upsert: true, new: true }
     );
-    const year = new Date().getFullYear();
+    const year = feeDate.getFullYear();
     const receiptNo = `RCPT-${year}-${String(counter.value).padStart(3, '0')}`;
 
     const now = new Date();
@@ -73,6 +74,7 @@ exports.collectFee = async (req, res, next) => {
       discountAmount,
       discountId: discount?._id,
       receiptNo,
+      date: feeDate,
       createdBy: req.user._id
     });
 
@@ -85,7 +87,7 @@ exports.collectFee = async (req, res, next) => {
       amount: netAmount,
       mode,
       description: `Fee - ${student.firstName} ${student.lastName}`,
-      date: payment.date,
+      date: feeDate,
       createdBy: req.user._id
     });
 

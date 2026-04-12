@@ -9,6 +9,7 @@ const {
   promoteStudentsBulk,
   getStudentDocuments
 } = require('../controllers/student.controller');
+const { importStudents } = require('../controllers/importStudents.controller');
 const { protect } = require('../middleware/auth.middleware');
 const { authorize } = require('../middleware/rbac.middleware');
 const { validateStudent } = require('../validators/student.validator');
@@ -42,6 +43,7 @@ router.route('/:id')
 
 router.post('/:id/photo', authorize('ADMIN', 'PRINCIPAL'), upload.single('photo'), uploadPhoto);
 router.post('/promote-bulk', authorize('ADMIN', 'PRINCIPAL'), promoteStudentsBulk);
+router.post('/import-excel', authorize('ADMIN', 'PRINCIPAL'), importStudents);
 router.get('/:id/documents', getStudentDocuments);
 
 module.exports = router;

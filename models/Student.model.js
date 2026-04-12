@@ -31,6 +31,11 @@ const studentSchema = new mongoose.Schema({
   motherName: String,
   guardianName: String,
   guardianRelation: String,
+  
+  // Social/Demographic (populated via SDMS import)
+  socialCategory: { type: String, default: 'NA' },   // e.g. '2-SC', '4-OBC', 'General'
+  minorityGroup: { type: String, default: 'NA' },     // e.g. 'Muslim', 'NA'
+  
   primaryContactPhone: { type: String, required: true }, // For SMS + sibling detection
   alternateContact: String,
   email: String,
