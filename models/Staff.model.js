@@ -9,6 +9,7 @@ const staffSchema = new mongoose.Schema(
     department: String,
     qualification: String,
     joinDate: Date,
+    dateOfBirth: Date,
     phone: String,
     basic: { type: Number, default: 0 },
     hra: { type: Number, default: 0 },

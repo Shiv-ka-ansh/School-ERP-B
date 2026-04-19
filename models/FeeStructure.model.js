@@ -5,7 +5,7 @@ const feeStructureSchema = new mongoose.Schema(
     schoolId: { type: String, required: true, default: 'smps_jhansi', index: true },
     className: { type: String, required: true },
     academicYear: { type: String, required: true },
-    feeHeads: [{ head: String, amount: Number }],
+    feeHeads: [{ head: String, amount: Number, months: String }],
     totalMonthly: { type: Number, default: 0 },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
