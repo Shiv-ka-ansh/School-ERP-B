@@ -13,7 +13,20 @@ const tcRecordSchema = new mongoose.Schema(
     lastExamAppeared: String,
     result: { type: String, enum: ['Pass', 'Fail', 'Promoted', 'N/A'], default: 'Pass' },
     status: { type: String, enum: ['ISSUED', 'CANCELLED'], default: 'ISSUED' },
-    remarks: String
+    remarks: String,
+    // SMPS TC Format Fields
+    tcFrom: String,
+    classAtAdmission: String,
+    classLeft: String,
+    nationality: { type: String, default: 'Indian' },
+    category: String,
+    qualifiedForPromotion: { type: String, default: 'Yes' },
+    subjectsStudied: String,
+    outstandingAchievements: String,
+    generalConduct: { type: String, default: 'Good' },
+    reasonForLeaving: String,
+    udiseCode: String,
+    studentPEN: String,
   },
   { timestamps: true }
 );

@@ -20,7 +20,9 @@ const {
   getVendorLedger,
   approveDiscount,
   rejectDiscount,
-  revokeDiscount
+  revokeDiscount,
+  updateFeeCollection,
+  deleteFeeCollection
 } = require('../controllers/finance.controller');
 const { protect } = require('../middleware/auth.middleware');
 const { authorize } = require('../middleware/rbac.middleware');
@@ -34,6 +36,8 @@ router.route('/fee-structures/:id').put(authorize('ADMIN', 'PRINCIPAL', 'ACCOUNT
 router.post('/collect', authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'), validateFeeCollection, collectFee);
 router.get('/collections', getFeeCollections);
 router.get('/collections/summary', getCollectionSummary);
+router.put('/collections/:id', authorize('PRINCIPAL'), updateFeeCollection);
+router.delete('/collections/:id', authorize('PRINCIPAL'), deleteFeeCollection);
 router.get('/receipts/:id', getFeeReceipt);
 router.get('/defaulters', getFeeDefaulters);
 router.route('/discounts').get(getDiscounts).post(authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'), createDiscount);

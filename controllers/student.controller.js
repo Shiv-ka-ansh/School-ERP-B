@@ -311,6 +311,73 @@ exports.promoteStudentsBulk = async (req, res, next) => {
   }
 };
 
+// @desc    Get all soft-deleted students (Recycle Bin)
+// @route   GET /api/v1/students/deleted
+// @access  Principal only
+exports.getDeletedStudents = async (req, res, next) => {
+  try {
+    const rows = await Student.find({ schoolId: req.schoolId, isDeleted: true })
+      .select('studentId admissionNumber firstName lastName currentClass section deletedAt deletedBy')
+      .populate('deletedBy', 'fullName username')
+      .sort({ deletedAt: -1 });
+    res.status(200).json({ success: true, data: rows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Permanently delete a soft-deleted student
+// @route   DELETE /api/v1/students/:id/permanent
+// @access  Principal only
+exports.permanentDeleteStudent = async (req, res, next) => {
+  try {
+    const student = await Student.findOne({ _id: req.params.id, schoolId: req.schoolId, isDeleted: true });
+    if (!student) return next(new AppError('Archived student not found', 404, 'NOT_FOUND'));
+
+    await auditService.logAction({
+      userId: req.user._id, username: req.user.username, userRole: req.user.role,
+      module: 'STUDENT', action: 'DELETE',
+      actionDescription: `Permanently deleted student: ${student.studentId}`,
+      targetCollection: 'Student', targetId: student._id,
+      oldValue: student.toObject(), ipAddress: req.ip,
+      userAgent: req.get('user-agent'), riskLevel: 'CRITICAL'
+    });
+
+    await Student.deleteOne({ _id: student._id });
+    res.status(200).json({ success: true, message: 'Student permanently deleted' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Restore a soft-deleted student
+// @route   PUT /api/v1/students/:id/restore
+// @access  Principal only
+exports.restoreStudent = async (req, res, next) => {
+  try {
+    const student = await Student.findOne({ _id: req.params.id, schoolId: req.schoolId, isDeleted: true });
+    if (!student) return next(new AppError('Archived student not found', 404, 'NOT_FOUND'));
+
+    student.isDeleted = false;
+    student.isActive = true;
+    student.deletedBy = null;
+    student.deletedAt = null;
+    await student.save();
+
+    await auditService.logAction({
+      userId: req.user._id, username: req.user.username, userRole: req.user.role,
+      module: 'STUDENT', action: 'UPDATE',
+      actionDescription: `Restored student: ${student.studentId}`,
+      targetCollection: 'Student', targetId: student._id,
+      ipAddress: req.ip, userAgent: req.get('user-agent')
+    });
+
+    res.status(200).json({ success: true, message: 'Student restored successfully', data: student });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.getStudentDocuments = async (req, res, next) => {
   try {
     const student = await Student.findOne({ _id: req.params.id, schoolId: req.schoolId, isDeleted: false });

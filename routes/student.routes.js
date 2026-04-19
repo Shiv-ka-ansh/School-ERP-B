@@ -7,7 +7,10 @@ const {
   deleteStudent,
   uploadPhoto,
   promoteStudentsBulk,
-  getStudentDocuments
+  getStudentDocuments,
+  getDeletedStudents,
+  permanentDeleteStudent,
+  restoreStudent
 } = require('../controllers/student.controller');
 const { importStudents } = require('../controllers/importStudents.controller');
 const { protect } = require('../middleware/auth.middleware');
@@ -45,5 +48,10 @@ router.post('/:id/photo', authorize('ADMIN', 'PRINCIPAL'), upload.single('photo'
 router.post('/promote-bulk', authorize('ADMIN', 'PRINCIPAL'), promoteStudentsBulk);
 router.post('/import-excel', authorize('ADMIN', 'PRINCIPAL'), importStudents);
 router.get('/:id/documents', getStudentDocuments);
+
+// Recycle Bin routes — Principal only
+router.get('/deleted', authorize('PRINCIPAL'), getDeletedStudents);
+router.delete('/:id/permanent', authorize('PRINCIPAL'), permanentDeleteStudent);
+router.put('/:id/restore', authorize('PRINCIPAL'), restoreStudent);
 
 module.exports = router;

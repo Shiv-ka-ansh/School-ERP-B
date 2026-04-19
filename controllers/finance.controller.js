@@ -274,3 +274,67 @@ exports.revokeDiscount = async (req, res, next) => {
     return next(error);
   }
 };
+
+exports.updateFeeCollection = async (req, res, next) => {
+  try {
+    const collection = await FeeCollection.findOne({ _id: req.params.id, schoolId: req.schoolId });
+    if (!collection) return next(new AppError('Fee collection not found', 404, 'NOT_FOUND'));
+
+    const oldData = collection.toObject();
+    const { amount, mode, remarks, feeHeads, refDetails } = req.body;
+
+    // Recalculate student totals if amount changed
+    if (amount !== undefined && amount !== collection.amount) {
+      const diff = Number(amount) - collection.amount;
+      await Student.findByIdAndUpdate(collection.studentId, { $inc: { totalFeesPaid: diff, totalFeesDue: -diff } });
+    }
+
+    Object.assign(collection, {
+      ...(amount !== undefined && { amount: Number(amount) }),
+      ...(mode !== undefined && { mode }),
+      ...(remarks !== undefined && { remarks }),
+      ...(feeHeads !== undefined && { feeHeads }),
+      ...(refDetails !== undefined && { refDetails })
+    });
+    await collection.save();
+
+    await auditService.logAction({
+      userId: req.user._id, username: req.user.username, userRole: req.user.role,
+      module: 'FEE', action: 'UPDATE',
+      actionDescription: `Updated fee collection ${collection.receiptNo}`,
+      targetCollection: 'FeeCollection', targetId: collection._id,
+      oldValue: oldData, newValue: collection.toObject(),
+      ipAddress: req.ip, userAgent: req.get('user-agent'), riskLevel: 'HIGH'
+    });
+
+    return sendSuccess(res, { message: 'Fee collection updated', data: collection });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.deleteFeeCollection = async (req, res, next) => {
+  try {
+    const collection = await FeeCollection.findOne({ _id: req.params.id, schoolId: req.schoolId });
+    if (!collection) return next(new AppError('Fee collection not found', 404, 'NOT_FOUND'));
+
+    // Reverse the student fee totals
+    await Student.findByIdAndUpdate(collection.studentId, {
+      $inc: { totalFeesPaid: -collection.amount, totalFeesDue: collection.amount }
+    });
+
+    await auditService.logAction({
+      userId: req.user._id, username: req.user.username, userRole: req.user.role,
+      module: 'FEE', action: 'DELETE',
+      actionDescription: `Deleted fee collection ${collection.receiptNo}`,
+      targetCollection: 'FeeCollection', targetId: collection._id,
+      oldValue: collection.toObject(), ipAddress: req.ip,
+      userAgent: req.get('user-agent'), riskLevel: 'HIGH'
+    });
+
+    await FeeCollection.deleteOne({ _id: collection._id });
+    return sendSuccess(res, { message: 'Fee collection deleted' });
+  } catch (error) {
+    return next(error);
+  }
+};

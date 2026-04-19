@@ -8,7 +8,13 @@ const auditService = require('../services/audit.service');
 
 exports.generateTC = async (req, res, next) => {
   try {
-    const { studentId, characterCertText = '', dateOfLeaving, lastExamAppeared, result } = req.body;
+    const {
+      studentId, characterCertText = '', dateOfLeaving, lastExamAppeared, result,
+      tcFrom, classAtAdmission, classLeft, nationality, category,
+      qualifiedForPromotion, subjectsStudied, outstandingAchievements,
+      generalConduct, reasonForLeaving, udiseCode, studentPEN, remarks
+    } = req.body;
+
     const student = await Student.findOne({ _id: studentId, schoolId: req.schoolId, isDeleted: false });
     if (!student) {
       return next(new AppError('Student not found', 404, 'NOT_FOUND'));
@@ -39,7 +45,20 @@ exports.generateTC = async (req, res, next) => {
       dateOfLeaving: dateOfLeaving ? new Date(dateOfLeaving) : new Date(),
       lastExamAppeared: lastExamAppeared || '',
       result: result || 'Pass',
-      status: 'ISSUED'
+      status: 'ISSUED',
+      tcFrom: tcFrom || '',
+      classAtAdmission: classAtAdmission || student.admissionClass || '',
+      classLeft: classLeft || student.currentClass || '',
+      nationality: nationality || 'Indian',
+      category: category || student.socialCategory || '',
+      qualifiedForPromotion: qualifiedForPromotion || 'Yes',
+      subjectsStudied: subjectsStudied || '',
+      outstandingAchievements: outstandingAchievements || '',
+      generalConduct: generalConduct || 'Good',
+      reasonForLeaving: reasonForLeaving || '',
+      udiseCode: udiseCode || '',
+      studentPEN: studentPEN || student.studentPEN || '',
+      remarks: remarks || ''
     });
 
     await auditService.logAction({
@@ -65,7 +84,9 @@ exports.generateTC = async (req, res, next) => {
 exports.getTCRegister = async (req, res, next) => {
   try {
     const filter = { schoolId: req.schoolId };
-    const rows = await TCRecord.find(filter).populate('studentId', 'studentId firstName lastName currentClass').sort({ issuedAt: -1 });
+    const rows = await TCRecord.find(filter)
+      .populate('studentId', 'studentId firstName lastName currentClass section dateOfBirth')
+      .sort({ issuedAt: -1 });
     return sendSuccess(res, { data: rows });
   } catch (error) {
     return next(error);
@@ -76,18 +97,16 @@ exports.reprintTC = async (req, res, next) => {
   try {
     const tc = await TCRecord.findOne({ _id: req.params.id, schoolId: req.schoolId }).populate(
       'studentId',
-      'studentId admissionNumber firstName lastName fatherName motherName currentClass section dateOfBirth dateOfAdmission'
+      'studentId admissionNumber firstName lastName fatherName motherName currentClass section dateOfBirth dateOfAdmission bloodGroup nationality socialCategory studentPEN aadharNumber address primaryContactPhone'
     );
     if (!tc) {
       return next(new AppError('TC not found', 404, 'NOT_FOUND'));
     }
     return sendSuccess(res, {
       data: {
-        tcNumber: tc.tcNumber,
-        issuedAt: tc.issuedAt,
-        characterCertText: tc.characterCertText,
+        tc,
         student: tc.studentId,
-        printTemplate: 'A4_LETTERHEAD'
+        printTemplate: 'SMPS_TC_FORMAT'
       }
     });
   } catch (error) {
