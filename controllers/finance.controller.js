@@ -29,7 +29,7 @@ exports.deleteExpense = expenseCrud.remove;
 
 exports.collectFee = async (req, res, next) => {
   try {
-    const { studentId, amount, mode, remarks, installmentNo = 1, period, feeHeads, refDetails, date: customDate } = req.body;
+    const { studentId, amount, mode, remarks, installmentNo = 1, period, months, feeHeads, refDetails, date: customDate } = req.body;
     const feeDate = customDate ? new Date(customDate) : new Date();
     const student = await Student.findOne({ _id: studentId, schoolId: req.schoolId, isDeleted: false });
     if (!student) {
@@ -67,6 +67,7 @@ exports.collectFee = async (req, res, next) => {
       mode,
       remarks,
       period,
+      months,
       feeHeads,
       refDetails,
       installmentNo,
@@ -113,7 +114,13 @@ exports.collectFee = async (req, res, next) => {
 
 exports.getFeeCollections = async (req, res, next) => {
   try {
-    const rows = await FeeCollection.find({ schoolId: req.schoolId }).sort({ createdAt: -1 });
+    const filter = { schoolId: req.schoolId };
+    if (req.query.studentId) filter.studentId = req.query.studentId;
+    
+    const rows = await FeeCollection.find(filter)
+      .sort({ createdAt: -1 })
+      .populate('studentId', 'firstName lastName currentClass section studentId');
+      
     return sendSuccess(res, { data: rows });
   } catch (error) {
     return next(error);

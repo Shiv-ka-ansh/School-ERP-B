@@ -14,6 +14,7 @@ const feeCollectionSchema = new mongoose.Schema(
     status: { type: String, enum: ['PAID', 'PENDING', 'FAILED'], default: 'PAID' },
     receiptNo: { type: String, required: true, unique: true },
     period: String,
+    months: [String],
     feeHeads: [{
       head: String,
       amount: Number
