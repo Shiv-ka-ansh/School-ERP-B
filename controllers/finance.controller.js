@@ -21,6 +21,7 @@ exports.deleteFeeStructure = feeStructureCrud.remove;
 
 exports.createDiscount = discountCrud.create;
 exports.getDiscounts = discountCrud.list;
+exports.updateDiscount = discountCrud.update;
 exports.deleteDiscount = discountCrud.remove;
 
 exports.createExpense = expenseCrud.create;
@@ -45,6 +46,10 @@ exports.collectFee = async (req, res, next) => {
     const receiptNo = `RCPT-${year}-${String(counter.value).padStart(3, '0')}`;
 
     const now = new Date();
+    const discountAmount = Number(req.body.discountAmount) || 0;
+    const netAmount = Number(amount);
+    const grossAmount = netAmount + discountAmount;
+
     const discount = await Discount.findOne({
       schoolId: req.schoolId,
       studentId,
@@ -52,13 +57,6 @@ exports.collectFee = async (req, res, next) => {
       $or: [{ validFrom: { $exists: false } }, { validFrom: null }, { validFrom: { $lte: now } }],
       $and: [{ $or: [{ validTo: { $exists: false } }, { validTo: null }, { validTo: { $gte: now } }] }]
     }).sort({ createdAt: -1 });
-
-    const discountAmount = discount
-      ? discount.type === 'percent'
-        ? Number(((amount * discount.value) / 100).toFixed(2))
-        : Math.min(amount, discount.value)
-      : 0;
-    const netAmount = Number((amount - discountAmount).toFixed(2));
 
     const payment = await FeeCollection.create({
       schoolId: req.schoolId,
@@ -71,7 +69,7 @@ exports.collectFee = async (req, res, next) => {
       feeHeads,
       refDetails,
       installmentNo,
-      grossAmount: amount,
+      grossAmount: grossAmount,
       discountAmount,
       discountId: discount?._id,
       receiptNo,

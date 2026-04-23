@@ -6,6 +6,7 @@ const {
   deleteFeeStructure,
   createDiscount,
   getDiscounts,
+  updateDiscount,
   deleteDiscount,
   createExpense,
   getExpenses,
@@ -41,7 +42,9 @@ router.delete('/collections/:id', authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'),
 router.get('/receipts/:id', getFeeReceipt);
 router.get('/defaulters', getFeeDefaulters);
 router.route('/discounts').get(getDiscounts).post(authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'), createDiscount);
-router.delete('/discounts/:id', authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'), deleteDiscount);
+router.route('/discounts/:id')
+  .put(authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'), updateDiscount)
+  .delete(authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'), deleteDiscount);
 router.post('/discounts/:id/approve', authorize('PRINCIPAL'), approveDiscount);
 router.post('/discounts/:id/reject', authorize('PRINCIPAL'), rejectDiscount);
 router.post('/discounts/:id/revoke', authorize('PRINCIPAL'), revokeDiscount);
