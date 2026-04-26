@@ -149,9 +149,175 @@ exports.getFeeReceipt = async (req, res, next) => {
 
 exports.getFeeDefaulters = async (req, res, next) => {
   try {
-    const rows = await Student.find({ schoolId: req.schoolId, isDeleted: false, totalFeesDue: { $gt: 0 } })
-      .select('studentId firstName lastName currentClass totalFeesDue primaryContactPhone');
-    return sendSuccess(res, { data: rows });
+    const ALL_MONTHS = [
+      'April', 'May', 'June', 'July', 'August', 'September',
+      'October', 'November', 'December', 'January', 'February', 'March'
+    ];
+
+    const today = new Date();
+    const currentDay = today.getDate();
+
+    // Get current month name
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const currentMonthName = monthNames[today.getMonth()];
+    const academicMonthIndex = ALL_MONTHS.indexOf(currentMonthName);
+
+    // Calculate expected paid months based on grace period (1-15 = grace, 16+ = due)
+    let expectedUpToIndex;
+    if (academicMonthIndex === -1) {
+      // Month not found — shouldn't happen, default to -1
+      expectedUpToIndex = -1;
+    } else if (currentDay <= 15) {
+      expectedUpToIndex = academicMonthIndex - 1; // Previous month was last due
+    } else {
+      expectedUpToIndex = academicMonthIndex; // This month is now also due
+    }
+
+    // If expectedUpToIndex < 0, it means even April hasn't been due yet
+    // (i.e., today is April 1-15) — no defaulters possible
+    if (expectedUpToIndex < 0) {
+      return sendSuccess(res, {
+        data: {
+          defaulters: [],
+          expectedMonths: [],
+          gracePeriodActive: true,
+          asOfDate: today.toISOString(),
+          message: `No fees due yet — grace period active (${currentMonthName} 1–15)`
+        }
+      });
+    }
+
+    const expectedMonths = ALL_MONTHS.slice(0, expectedUpToIndex + 1);
+
+    // Get all active students
+    const students = await Student.find({
+      schoolId: req.schoolId,
+      isDeleted: false,
+      isActive: true
+    }).select('studentId firstName lastName currentClass section primaryContactPhone totalFeesPaid totalFeesDue');
+
+    if (students.length === 0) {
+      return sendSuccess(res, {
+        data: { defaulters: [], expectedMonths, gracePeriodActive: false, asOfDate: today.toISOString() }
+      });
+    }
+
+    // Get all fee collections for this school (bulk — more efficient than per-student queries)
+    const allCollections = await FeeCollection.find({
+      schoolId: req.schoolId
+    }).select('studentId months feeHeads amount discountAmount');
+
+    // Get all fee structures
+    const allFeeStructures = await FeeStructure.find({
+      schoolId: req.schoolId
+    });
+
+    // Build a map: studentId → paid months
+    const paidMonthsMap = {};
+    const paidChargesMap = {};
+    allCollections.forEach(c => {
+      const sid = String(c.studentId);
+      if (!paidMonthsMap[sid]) paidMonthsMap[sid] = [];
+      if (!paidChargesMap[sid]) paidChargesMap[sid] = [];
+      if (c.months && Array.isArray(c.months)) {
+        paidMonthsMap[sid].push(...c.months);
+      }
+      if (c.feeHeads && Array.isArray(c.feeHeads)) {
+        c.feeHeads.forEach(fh => {
+          if (!fh.head.toLowerCase().includes('tuition')) {
+            paidChargesMap[sid].push(fh.head.toLowerCase().trim());
+          }
+        });
+      }
+    });
+
+    // Helper: get fee structure for a class
+    const getFeeStructure = (className) => {
+      return allFeeStructures.find(fs => {
+        const classes = fs.className.split(',').map(c => c.trim());
+        return classes.includes(className);
+      });
+    };
+
+    const defaulters = [];
+
+    for (const student of students) {
+      const sid = String(student._id);
+      const paidMonths = [...new Set(paidMonthsMap[sid] || [])];
+      const paidCharges = [...new Set(paidChargesMap[sid] || [])];
+
+      // Which expected months are NOT paid?
+      const overdueMonths = expectedMonths.filter(m => !paidMonths.includes(m));
+
+      if (overdueMonths.length === 0) continue; // Student is up to date — skip
+
+      // Get fee structure to calculate remaining amount
+      const feeStructure = getFeeStructure(student.currentClass);
+
+      let monthlyTuition = 0;
+      let unpaidChargesAmount = 0;
+      let annualCharges = [];
+
+      if (feeStructure) {
+        monthlyTuition = feeStructure.monthlyTuition || 0;
+
+        if (monthlyTuition === 0 && feeStructure.feeHeads?.length > 0) {
+          const tuitionHead = feeStructure.feeHeads.find(h =>
+            h.head.toLowerCase().includes('tuition')
+          );
+          if (tuitionHead) monthlyTuition = Number(tuitionHead.amount);
+          annualCharges = feeStructure.feeHeads
+            .filter(h => !h.head.toLowerCase().includes('tuition'))
+            .map(h => ({ name: h.head, amount: Number(h.amount) }));
+        } else {
+          annualCharges = (feeStructure.annualCharges || [])
+            .map(c => ({ name: c.name, amount: Number(c.amount) }));
+        }
+
+        // Calculate unpaid annual charges
+        unpaidChargesAmount = annualCharges
+          .filter(ac => !paidCharges.includes(ac.name.toLowerCase().trim()))
+          .reduce((sum, ac) => sum + ac.amount, 0);
+      }
+
+      const overdueMonthsAmount = overdueMonths.length * monthlyTuition;
+      const totalOverdue = overdueMonthsAmount + unpaidChargesAmount;
+
+      defaulters.push({
+        studentId: student._id,
+        admissionNo: student.studentId,
+        name: `${student.firstName} ${student.lastName}`.trim(),
+        currentClass: student.currentClass,
+        section: student.section || '',
+        phone: student.primaryContactPhone || '',
+        overdueMonths,          // e.g. ["April", "May"]
+        overdueMonthsCount: overdueMonths.length,
+        monthlyTuition,
+        overdueMonthsAmount,    // tuition for overdue months
+        unpaidChargesAmount,    // annual charges unpaid
+        totalOverdue,           // grand total remaining till today
+        paidMonthsCount: paidMonths.length,
+        totalPaid: student.totalFeesPaid || 0
+      });
+    }
+
+    // Sort: most overdue first (highest totalOverdue)
+    defaulters.sort((a, b) => b.totalOverdue - a.totalOverdue);
+
+    return sendSuccess(res, {
+      data: {
+        defaulters,
+        expectedMonths,          // e.g. ["April", "May"]
+        gracePeriodActive: false,
+        asOfDate: today.toISOString(),
+        totalDefaulters: defaulters.length,
+        totalOverdueAmount: defaulters.reduce((s, d) => s + d.totalOverdue, 0)
+      }
+    });
+
   } catch (error) {
     return next(error);
   }
