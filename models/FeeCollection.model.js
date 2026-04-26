@@ -6,6 +6,7 @@ const feeCollectionSchema = new mongoose.Schema(
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
     amount: { type: Number, required: true },
     grossAmount: Number,
+    amountDue: { type: Number, default: 0 }, // What the student was supposed to pay this session
     discountAmount: { type: Number, default: 0 },
     discountId: { type: mongoose.Schema.Types.ObjectId, ref: 'Discount' },
     installmentNo: { type: Number, default: 1 },

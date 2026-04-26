@@ -3,7 +3,7 @@ const AppError = require('../utils/appError');
 
 exports.validateStudent = [
   body('firstName').notEmpty().withMessage('First name is required').trim(),
-  body('lastName').notEmpty().withMessage('Last name is required').trim(),
+  body('lastName').optional({ checkFalsy: true }).trim(),
   body('dateOfBirth').isISO8601().withMessage('Valid date of birth is required'),
   body('gender').isIn(['Male', 'Female', 'Other']).withMessage('Invalid gender'),
   body('currentClass').notEmpty().withMessage('Current class is required'),

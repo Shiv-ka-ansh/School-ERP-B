@@ -14,6 +14,7 @@ const {
   collectFee,
   getFeeCollections,
   getFeeReceipt,
+  printReceipt,
   getCollectionSummary,
   getFeeDefaulters,
   getPnL,
@@ -23,7 +24,8 @@ const {
   rejectDiscount,
   revokeDiscount,
   updateFeeCollection,
-  deleteFeeCollection
+  deleteFeeCollection,
+  getStudentFeeSummary
 } = require('../controllers/finance.controller');
 const { protect } = require('../middleware/auth.middleware');
 const { authorize } = require('../middleware/rbac.middleware');
@@ -40,7 +42,9 @@ router.get('/collections/summary', getCollectionSummary);
 router.put('/collections/:id', authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'), updateFeeCollection);
 router.delete('/collections/:id', authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'), deleteFeeCollection);
 router.get('/receipts/:id', getFeeReceipt);
+router.get('/receipts/:id/print', printReceipt);
 router.get('/defaulters', getFeeDefaulters);
+router.get('/student-summary/:studentId', getStudentFeeSummary);
 router.route('/discounts').get(getDiscounts).post(authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'), createDiscount);
 router.route('/discounts/:id')
   .put(authorize('ADMIN', 'PRINCIPAL', 'ACCOUNTANT'), updateDiscount)

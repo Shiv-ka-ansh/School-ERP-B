@@ -3,6 +3,7 @@ const Counter = require('../models/Counter.model');
 const auditService = require('../services/audit.service');
 const cloudinaryService = require('../services/cloudinary.service');
 const AppError = require('../utils/appError');
+const FeeStructure = require('../models/FeeStructure.model');
 
 // @desc    Create new student
 // @route   POST /api/v1/students
@@ -53,6 +54,41 @@ exports.createStudent = async (req, res, next) => {
 
     const student = await Student.create(studentData);
     
+    // After student is saved, try to set initial fee due from fee structure
+    try {
+      const feeStructure = await FeeStructure.findOne({
+        schoolId: req.schoolId,
+        $or: [
+          { className: studentData.currentClass },
+          { className: { $regex: new RegExp(`(^|,)\\s*${studentData.currentClass}\\s*(,|$)`) } }
+        ]
+      });
+      
+      if (feeStructure) {
+        let monthlyTuition = feeStructure.monthlyTuition || 0;
+        let annualChargesTotal = 0;
+        
+        if (monthlyTuition === 0 && feeStructure.feeHeads?.length > 0) {
+          const tuitionHead = feeStructure.feeHeads.find(h => h.head.toLowerCase().includes('tuition'));
+          if (tuitionHead) monthlyTuition = Number(tuitionHead.amount);
+          annualChargesTotal = feeStructure.feeHeads
+            .filter(h => !h.head.toLowerCase().includes('tuition'))
+            .reduce((sum, h) => sum + Number(h.amount), 0);
+        } else {
+          annualChargesTotal = (feeStructure.annualCharges || [])
+            .reduce((sum, c) => sum + Number(c.amount), 0);
+        }
+        
+        const annualFeeTotal = (monthlyTuition * 12) + annualChargesTotal;
+        if (annualFeeTotal > 0) {
+          await Student.findByIdAndUpdate(student._id, { totalFeesDue: annualFeeTotal });
+        }
+      }
+    } catch (e) {
+      // Non-critical — don't fail student creation if fee structure not found
+      console.error('Could not set initial fee due:', e.message);
+    }
+
     // Log to audit trail
     await auditService.logAction({
       userId: req.user._id,

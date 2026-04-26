@@ -6,7 +6,7 @@ const studentSchema = new mongoose.Schema({
   admissionNumber: { type: String }, // ADM2026001
   rollNumber: { type: Number },
   firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
+  lastName: { type: String },
   dateOfBirth: { type: Date, required: true },
   gender: { type: String, enum: ['Male', 'Female', 'Other'], required: true },
   bloodGroup: { type: String },
