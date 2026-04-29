@@ -55,5 +55,15 @@ exports.createStaff = async (req, res, next) => {
 
 exports.getStaff = crud.list;
 exports.getStaffById = crud.getById;
-exports.updateStaff = crud.update;
+exports.updateStaff = async (req, res, next) => {
+  try {
+    if (req.body.role) {
+      const TEACHING_ROLES = ['Teacher', 'Principal', 'Vice Principal', 'Coordinator'];
+      req.body.roleType = TEACHING_ROLES.includes(req.body.role) ? 'TEACHER' : 'NON_TEACHING';
+    }
+    return await crud.update(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+};
 exports.deleteStaff = crud.remove;
