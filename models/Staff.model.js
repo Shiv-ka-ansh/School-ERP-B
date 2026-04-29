@@ -6,6 +6,7 @@ const staffSchema = new mongoose.Schema(
     staffId: { type: String, unique: true, sparse: true }, // e.g. STF-2026-001
     name: { type: String, required: true, trim: true },
     roleType: { type: String, enum: ['TEACHER', 'NON_TEACHING'], default: 'TEACHER' },
+    role: { type: String, default: 'Teacher' },
     subject: String,
     department: String,
     qualification: String,

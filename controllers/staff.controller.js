@@ -20,8 +20,12 @@ exports.createStaff = async (req, res, next) => {
     const seqNum = seq.value;
     const staffId = `STF-${new Date().getFullYear()}-${String(seqNum).padStart(3, '0')}`;
 
+    const TEACHING_ROLES = ['Teacher', 'Principal', 'Vice Principal', 'Coordinator'];
+    const roleType = req.body.roleType || (TEACHING_ROLES.includes(req.body.role) ? 'TEACHER' : 'NON_TEACHING');
+
     const payload = {
       ...req.body,
+      roleType,
       staffId,
       schoolId,
       createdBy: req.user._id
