@@ -10,9 +10,44 @@ const examCrud = createCrudController({ Model: Exam, moduleName: 'EXAM', searcha
 const syllabusCrud = createCrudController({ Model: Syllabus, moduleName: 'EXAM', searchable: ['className', 'subject', 'chapterName'] });
 
 exports.createExam = examCrud.create;
-exports.getExams = examCrud.list;
 exports.updateExam = examCrud.update;
 exports.deleteExam = examCrud.remove;
+
+// Custom getExams: restrict TEACHER to their assignedClasses
+exports.getExams = async (req, res, next) => {
+  try {
+    const { getPagination, getSort } = require('../utils/queryBuilder');
+    const { sendSuccess: send } = require('../utils/apiResponse');
+    const { page, limit, skip } = getPagination(req.query);
+    const filter = { schoolId: req.schoolId };
+
+    if (req.query.search) {
+      filter.$or = ['name', 'term', 'className', 'subject'].map(f => ({ [f]: { $regex: req.query.search, $options: 'i' } }));
+    }
+
+    // TEACHER role: restrict to assigned classes only
+    if (req.user.role === 'TEACHER' && Array.isArray(req.user.assignedClasses) && req.user.assignedClasses.length > 0) {
+      filter.className = { $in: req.user.assignedClasses };
+    }
+
+    const rows = await Exam.find(filter).sort(getSort(req.query)).skip(skip).limit(limit);
+    const totalItems = await Exam.countDocuments(filter);
+    return send(res, {
+      message: 'Data fetched successfully',
+      data: rows,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit) || 1,
+        totalItems,
+        itemsPerPage: limit,
+        hasNextPage: page * limit < totalItems,
+        hasPrevPage: page > 1
+      }
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 exports.createSyllabus = syllabusCrud.create;
 exports.getSyllabus = syllabusCrud.list;

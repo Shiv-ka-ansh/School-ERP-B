@@ -96,7 +96,9 @@ exports.login = async (req, res, next) => {
           role: user.role,
           email: user.email,
           schoolId: user.schoolId,
-          permissions: user.permissions
+          permissions: user.permissions,
+          assignedClasses: user.assignedClasses || [],
+          linkedStaffId: user.linkedStaffId || null
         },
         expiresIn: process.env.JWT_EXPIRY || '8h'
       },
@@ -120,6 +122,7 @@ exports.me = async (req, res, next) => {
         role: req.user.role,
         schoolId: req.user.schoolId,
         assignedClasses: req.user.assignedClasses,
+        linkedStaffId: req.user.linkedStaffId || null,
         permissions: req.user.permissions
       }
     });

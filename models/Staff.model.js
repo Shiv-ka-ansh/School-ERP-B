@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const staffSchema = new mongoose.Schema(
   {
     schoolId: { type: String, required: true, default: 'smps_jhansi', index: true },
+    staffId: { type: String, unique: true, sparse: true }, // e.g. STF-2026-001
     name: { type: String, required: true, trim: true },
     roleType: { type: String, enum: ['TEACHER', 'NON_TEACHING'], default: 'TEACHER' },
     subject: String,
@@ -21,5 +22,7 @@ const staffSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+staffSchema.index({ schoolId: 1, staffId: 1 });
 
 module.exports = mongoose.model('Staff', staffSchema);

@@ -206,3 +206,68 @@ exports.getLopSummary = async (req, res, next) => {
     return next(error);
   }
 };
+
+// @desc    Get current teacher's own attendance (My Attendance)
+// @route   GET /api/v1/attendance/my
+// @access  TEACHER
+exports.getMyAttendance = async (req, res, next) => {
+  try {
+    const { month, year } = req.query;
+    if (!month || !year) {
+      return next(new AppError('month and year are required', 400, 'VALIDATION_ERROR'));
+    }
+
+    // Find the Staff record: prefer linkedStaffId, fallback to fullName match
+    let staffRecord = null;
+    if (req.user.linkedStaffId) {
+      staffRecord = await Staff.findOne({ _id: req.user.linkedStaffId, schoolId: req.schoolId });
+    }
+    if (!staffRecord && req.user.fullName) {
+      staffRecord = await Staff.findOne({
+        schoolId: req.schoolId,
+        name: { $regex: new RegExp(`^${req.user.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+        isActive: true
+      });
+    }
+
+    if (!staffRecord) {
+      return sendSuccess(res, {
+        data: {
+          staffId: null,
+          staffName: req.user.fullName,
+          records: [],
+          summary: { present: 0, absent: 0, halfDay: 0, leave: 0 }
+        }
+      });
+    }
+
+    const start = new Date(Number(year), Number(month) - 1, 1);
+    const end = new Date(Number(year), Number(month), 0, 23, 59, 59, 999);
+
+    const records = await Attendance.find({
+      schoolId: req.schoolId,
+      type: 'STAFF',
+      staffId: staffRecord._id,
+      date: { $gte: start, $lte: end }
+    }).sort({ date: 1 });
+
+    const summary = { present: 0, absent: 0, halfDay: 0, leave: 0 };
+    records.forEach(r => {
+      if (r.status === 'PRESENT') summary.present++;
+      else if (r.status === 'ABSENT') summary.absent++;
+      else if (r.status === 'HALF_DAY') summary.halfDay++;
+      else if (r.status === 'LEAVE') summary.leave++;
+    });
+
+    return sendSuccess(res, {
+      data: {
+        staffId: staffRecord._id,
+        staffName: staffRecord.name,
+        records,
+        summary
+      }
+    });
+  } catch (error) {
+    return next(error);
+  }
+};

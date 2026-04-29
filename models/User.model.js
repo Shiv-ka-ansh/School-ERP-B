@@ -37,6 +37,11 @@ const userSchema = new mongoose.Schema({
     type: [String], // e.g., ['Class 6A', 'Class 7B']
     default: []
   },
+  linkedStaffId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Staff',
+    default: null
+  },
   schoolId: {
     type: String,
     required: true,

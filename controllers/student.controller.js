@@ -129,6 +129,24 @@ exports.getStudents = async (req, res, next) => {
     if (req.query.section) filter.section = req.query.section;
     if (req.query.isActive !== undefined) filter.isActive = req.query.isActive === 'true';
 
+    // TEACHER role: restrict to assigned classes only
+    if (req.user.role === 'TEACHER' && Array.isArray(req.user.assignedClasses) && req.user.assignedClasses.length > 0) {
+      // If a specific class is queried, ensure it's within assigned classes
+      if (req.query.class) {
+        if (!req.user.assignedClasses.includes(req.query.class)) {
+          return res.status(200).json({
+            success: true,
+            message: 'Students fetched successfully',
+            data: [],
+            pagination: { currentPage: 1, totalPages: 0, totalItems: 0, itemsPerPage: limit, hasNextPage: false, hasPrevPage: false },
+            timestamp: new Date()
+          });
+        }
+      } else {
+        filter.currentClass = { $in: req.user.assignedClasses };
+      }
+    }
+
     if (req.query.search) {
       filter.$or = [
         { firstName: { $regex: req.query.search, $options: 'i' } },
